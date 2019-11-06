@@ -60,16 +60,17 @@ class RequestReply(
     for {
       resolvedReplyDestination <- jmsReplyDestination(session)
       resolvedTrackerDestination <- jmsTrackerDestination(session)
+
     } yield {
       if (setJmsReplyTo) {
         message.setJMSReplyTo(resolvedReplyDestination)
       }
-
+      val resolvedSelector = if (attributes.selector.isDefined) attributes.selector.get(session).toOption else null
       messageMatcher.prepareRequest(message)
 
       // notify the tracker that a message was sent
       val matchId = messageMatcher.requestMatchId(message)
-      val tracker = jmsConnection.tracker(resolvedTrackerDestination, attributes.selector, protocol.listenerThreadCount, messageMatcher)
+      val tracker = jmsConnection.tracker(resolvedTrackerDestination, resolvedSelector, protocol.listenerThreadCount, messageMatcher)
 
       new Around(
         before = () => {
